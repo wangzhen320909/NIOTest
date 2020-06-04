@@ -3,10 +3,7 @@ package com.wzg.socketChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -19,12 +16,12 @@ public class ServerTest {
             // 绑定一个端口:8000, 在服务器端监听
             ssc.socket().bind(new InetSocketAddress(8000));
             // 设置为非阻塞
-            ssc.configureBlocking(false);
+            SelectableChannel  selectableChannel = ssc.configureBlocking(false);
 
             // 得到Selector对象
             Selector selector = Selector.open();
             // 注册 channel，并且指定感兴趣的事件是 Accept
-            ssc.register(selector, SelectionKey.OP_ACCEPT);
+            SelectionKey selectionKey = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
             ByteBuffer readBuff = ByteBuffer.allocate(1024);
             ByteBuffer writeBuff = ByteBuffer.allocate(128);
@@ -33,7 +30,7 @@ public class ServerTest {
 
             while (true) {
                 int nReady = selector.select();
-
+                System.out.println(nReady);
                 /*如果返回的>0, 就获取到相关的selectionKey集合
                  1. 如果返回的>0, 表示已经获取到关注的事件了
                  2. selector.selectedKeys()返回关注事件的集合
@@ -55,7 +52,8 @@ public class ServerTest {
                         // 为该客户端生成一个SocketChannel
                         SocketChannel socketChannel = ssc.accept();
                         socketChannel.configureBlocking(false);
-                        // 将当前的 socketChannel 注册到 selector, 关注事件为OP_READ, 同时给socketChannel关联一个Buffer
+                        // 将当前的 socketChannel 注册到 selector, 关注事件为OP_READ,
+                        // 同时给socketChannel关联一个Buffer
                         socketChannel.register(selector, SelectionKey.OP_READ);
                     } else if (key.isReadable()) { // 发生OP_READ
                         // 通过key反向获取到对应的channel
